@@ -23,18 +23,23 @@ if ($ldap) {
     foreach ($directory_items as $item) $attributes[] = $attributes_map[$item]['attribute'];
 
     # Search for users
-    $search = ldap_search($ldap, $ldap_user_base, $ldap_user_filter, $attributes, 0, $ldap_size_limit);
-
-    $errno = ldap_errno($ldap);
-
-    if ( $errno == 4) {
-        $size_limit_reached = true;
+    $search = [];
+    for ($i = 0; $i < sizeof($ldap_search_base); $i++) {
+        $searchArray = ldap_search($ldap, $ldap_search_base[$i], $ldap_user_filter, $attributes, 0, $ldap_size_limit);
+        $search = array_merge($search, $searchArray);
+        $errno = ldap_errno($ldap);
+        if ( $errno == 4 ) {
+            $size_limit_reached = true;
+            break ;
+        }
+        if ( $errno != 0 and $errno !=4 ) {
+            $result = "ldaperror";
+            error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
+            break ;
+        }
     }
-    if ( $errno != 0 and $errno != 4 ) {
-        $result = "ldaperror";
-        error_log("LDAP - Search error $errno  (".ldap_error($ldap).")");
-    } else {
 
+    if ( $errno === 0 ) {
         # Sort entries
         if (isset($search_result_sortby)) {
             $sortby = $attributes_map[$directory_sortby]['attribute'];

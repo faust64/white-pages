@@ -28,11 +28,23 @@ if ($result === "") {
     $result = $ldap_connection[1];
 
     # Find object type
-    if ( preg_match( '/'.$ldap_group_base.'$/i', $dn) ) { $type = "group"; }
-    else { $type = "user"; }
+    if (isset($_GET['type'])) {
+        $type = $_GET['type'];
+    } else if (isset($_POST['type'])) {
+        $type = $_POST['type'];
+    } else {
+        for ($i = 0; $i < sizeof($ldap_group_base); $i++) {
+            if (array_search($ldap_group_base[$i], $ldap_user_base) != false) { $type = "user"; break; }
+        }
+        if ($type === "") {
+            for ($i = 0; $i < sizeof($ldap_group_base); $i++) {
+                if ( preg_match( '/' . $ldap_group_base[$i] . '$/i', $dn) ) { $type = "group"; }
+            }
+        }
+    }
+    if ($type === "") { $type = "user"; }
 
     if ($ldap) {
-
         # Search attributes
         $attributes = array();
         $search_items = array();
